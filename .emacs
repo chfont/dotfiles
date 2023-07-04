@@ -1,16 +1,21 @@
-(load "~/.emacs.d/custom.el")
+;(load "~/.emacs.d/custom.el")
 
 (require 'package)
 (add-to-list 'package-archives
 	     '("melpa" .  "https://melpa.org/packages/") t)
 (package-initialize)
 
+;Disable Some UI Stuff - If you need these ui components, remove these
+(tool-bar-mode -1)
+(menu-bar-mode -1)
+(setq inhibit-startup-screen t)
+
 ;List contains all packages installed by user
 (setq user-packages (list
+		     'exec-path-from-shell
 		     'flyspell
 		     'kaolin-themes
 		     'use-package
-		     'dired-sidebar
 		     'lsp-mode
 		     'rustic
 		     'company
@@ -20,10 +25,15 @@
 		     'magit
 		     'olivetti
 		     'slime
-		     'fstar-mode
-		     'boogie-friends
-		     'lsp-metals
-		     'scala-mode
+		     'treemacs
+		     ;'fstar-mode
+		     ;'boogie-friends
+		     ;'lsp-metals
+		     ;'scala-mode
+		     ;'gnu-apl-mode
+		     'haskell-mode
+		     'lsp-haskell
+		     ;'lean-mode
 		     ))
 
 ; Ensure everything installed
@@ -33,32 +43,50 @@
 (setq use-package-always-ensure t
       use-package-always-defer t)
 
+;; Theming
+(use-package doom-themes
+  :ensure t
+  :config
+  ;; Global settings (defaults)
+  (setq doom-themes-enable-bold t    ; if nil, bold is universally disabled
+        doom-themes-enable-italic t) ; if nil, italics is universally disabled
+  )
+
+  (load-theme 'doom-one t)
+  (setq doom-themes-treemacs-theme "doom-atom")
+
+; Shell setup [GUI ONLY]
+(when (memq window-system '(mac ns x))
+  (exec-path-from-shell-initialize))
+
 ; Hide backup files, so they don't clutter file managers
 (setq backup-directory-alist `(("." . ,(expand-file-name ".tmp/backups/"
                                                          user-emacs-directory))))
 ;General UI related setup
 (add-hook 'prog-mode-hook #'display-line-numbers-mode)
-(use-package dired-sidebar
-  :bind (("C-x C-n" . dired-sidebar-toggle-sidebar))
-  :commands (dired-sidebar-toggle-sidebar)
+
+(use-package treemacs
+  :ensure t
+  :defer t
+  :init
+  :config
+  (setq treemacs-display-in-side-window t)
+  :bind
+  (:map global-map
+	("C-x t t"   . treemacs)
+	("C-x t d"   . treemacs-select-directory)
   )
-(use-package vscode-icon
-  :commands (vscode-icon-for-file))
-(setq dired-sidebar-theme 'vscode)
+)
 
 ;; Magit
 (use-package magit)
-
-;Disable Some UI Stuff - If you need these ui components, remove these
-(tool-bar-mode -1)
-(menu-bar-mode -1)
-(setq inhibit-startup-screen t)
 
 ; Latex Editing 
 (setq TeX-PDF-mode t)
 (require 'flyspell)
 (dolist (hook '(latex-mode-hook))
   (add-hook hook (lambda () (flyspell-mode 1))))
+
 ; Olivetti is convenient for making latex more readable in buffers
 (use-package olivetti)
 (global-set-key (kbd "C-c o") 'olivetti-mode)
@@ -74,14 +102,16 @@
 (use-package lsp-ui)
 (add-hook 'lsp-mode-hook 'lsp-ui-mode)
 
+(global-set-key (kbd "C-c C-/") 'comment-region) ; hook for vscode-like comment/uncomment. C-u prefix to uncomment.
+(global-set-key (kbd "C-c C-q") (lambda () (interactive) (load-file "~/.emacs")))
+
 ;Setup hooks for C++, C, Rust, and Scala
 (add-hook 'c++-mode-hook 'lsp)
 (add-hook 'c-mode-hook 'lsp)
 (add-hook 'rust-mode-hook 'lsp)
 (add-hook 'scala-mode-hook 'lsp)
-
-(setq lsp-rust-server 'rust-analyzer)
-(setq rustic-lsp-server 'rust-analyzer)
+(add-hook 'haskell-mode-hook 'lsp)
+(setq lsp-haskell-server-path "haskell-language-server-wrapper")
 
 (use-package scala-mode
   :interpreter ("scala" . scala-mode))
@@ -126,3 +156,5 @@
 	 "* TODO %?\n")
 	) ;TODO - more templates
       )
+
+
